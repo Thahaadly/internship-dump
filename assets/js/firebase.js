@@ -12,6 +12,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  where,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -38,5 +39,6 @@ export {
   onSnapshot,
   query,
   orderBy,
+  where,
   serverTimestamp
 };
