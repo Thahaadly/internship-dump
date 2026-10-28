@@ -11,7 +11,8 @@ import {
   onSnapshot,
   query,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  where
 } from "./firebase.js";
 
 const REACTIONS = [
@@ -93,6 +94,15 @@ document.addEventListener("DOMContentLoaded", () => {
   let touchStartX = 0;
   let editingCommentId = null;
   let editingCommentText = "";
+  let unsubscribePhotos = () => {};
+  let isLoadingPhotos = true;
+  let unsubscribeStories = () => {};
+  let stories = [];
+  let storyViewerOpen = false;
+  let storyList = [];
+  let storyIndex = 0;
+  let storyProgressTimer = null;
+  let storyIntent = false;
 
   function showToast(message, type = "info") {
     if (!toastContainer) return;
@@ -272,6 +282,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function renderGallery(items) {
+    if (isLoadingPhotos) {
+      galleryGrid.innerHTML = `
+        <div class="col-span-full py-20 text-center text-blue-200">
+          <p class="text-lg animate-pulse">Memuat album kenangan... ⏳</p>
+        </div>
+      `;
+      return;
+    }
+
     galleryGrid.innerHTML = "";
 
     if (items.length === 0) {
@@ -332,11 +351,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const photosQuery = query(collection(db, "internship_photos"), orderBy("createdAt", "desc"));
 
-  onSnapshot(photosQuery, (snapshot) => {
-    allPhotos = [];
-    snapshot.forEach((docSnap) => {
-      allPhotos.push({ id: docSnap.id, ...docSnap.data() });
+  unsubscribePhotos = onSnapshot(photosQuery, (snapshot) => {
+    // Perbarui daftar foto dari perubahan dokumen (added / modified / removed)
+    snapshot.docChanges().forEach((change) => {
+      const photo = { id: change.doc.id, ...change.doc.data() };
+      if (change.type === "added") {
+        if (!allPhotos.some((item) => item.id === photo.id)) allPhotos.unshift(photo);
+      } else if (change.type === "modified") {
+        const index = allPhotos.findIndex((item) => item.id === photo.id);
+        if (index !== -1) allPhotos[index] = photo;
+      } else if (change.type === "removed") {
+        allPhotos = allPhotos.filter((item) => item.id !== change.doc.id);
+      }
     });
+
+    isLoadingPhotos = false;
 
     applyFilter();
 
@@ -347,8 +376,183 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }, (error) => {
+    isLoadingPhotos = false;
     console.error("Firestore error:", error);
     showToast("Gagal memuat album. Coba refresh.", "error");
+  });
+
+  const storiesQuery = query(
+    collection(db, "stories"),
+    where("expiresAt", ">", Date.now()),
+    orderBy("expiresAt", "asc")
+  );
+
+  unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
+    stories = [];
+    snapshot.forEach((docSnap) => {
+      stories.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    renderStories();
+  }, (error) => {
+    console.error("Stories error:", error);
+  });
+
+  function timeAgo(timestamp) {
+    const createdAt = Number(timestamp) || 0;
+    const diff = Date.now() - createdAt;
+    if (diff < 60 * 1000) return "baru saja";
+    if (diff < 60 * 60 * 1000) return `${Math.floor(diff / (60 * 1000))} menit lalu`;
+    if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / (60 * 60 * 1000))} jam lalu`;
+    return `${Math.floor(diff / (24 * 60 * 60 * 1000))} hari lalu`;
+  }
+
+  function renderStories() {
+    const storiesRow = document.getElementById("storiesRow");
+    if (!storiesRow) return;
+    storiesRow.innerHTML = "";
+    const groups = new Map();
+    stories.forEach((story) => {
+      const name = story.name || "Teman Magang";
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name).push(story);
+    });
+    const row = document.createElement("div");
+    row.className = "flex gap-3 overflow-x-auto";
+    groups.forEach((list) => {
+      list.forEach((story) => {
+        const circle = document.createElement("button");
+        circle.type = "button";
+        circle.className = "story-circle shrink-0 w-14 h-14 rounded-full overflow-hidden border-2 border-transparent hover:border-amber-400 transition";
+        circle.dataset.storyId = story.id;
+        const img = document.createElement("img");
+        img.src = story.url;
+        img.alt = `Story ${story.name || "Teman Magang"}`;
+        img.className = "w-full h-full object-cover";
+        circle.appendChild(img);
+        circle.addEventListener("click", () => openStoryViewer(list, list.indexOf(story)));
+        row.appendChild(circle);
+      });
+    });
+    storiesRow.appendChild(row);
+  }
+
+  function openStoryViewer(list, index) {
+    storyList = list;
+    storyIndex = index;
+    storyViewerOpen = true;
+    const img = document.getElementById("storyImg");
+    const nameEl = document.getElementById("storyName");
+    const progressBar = document.getElementById("storyProgressBar");
+    if (img && storyList[storyIndex]) img.src = storyList[storyIndex].url || "";
+    if (nameEl) nameEl.textContent = storyList[storyIndex]?.name || "Teman Magang";
+    const timeEl = document.getElementById("storyTime");
+    if (timeEl) timeEl.textContent = timeAgo(storyList[storyIndex]?.createdAt);
+    if (progressBar) progressBar.style.width = "0%";
+    const viewer = document.getElementById("storyViewer");
+    if (viewer) viewer.classList.remove("hidden");
+    startStoryProgress();
+  }
+
+  function startStoryProgress() {
+    if (storyProgressTimer) clearInterval(storyProgressTimer);
+    const progressBar = document.getElementById("storyProgressBar");
+    const startedAt = Date.now();
+    storyProgressTimer = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const percent = Math.min(100, (elapsed / 5000) * 100);
+      if (progressBar) progressBar.style.width = percent + "%";
+      if (percent >= 100) {
+        clearInterval(storyProgressTimer);
+        storyProgressTimer = null;
+        nextStory();
+      }
+    }, 50);
+  }
+
+  function nextStory() {
+    if (storyIndex + 1 >= storyList.length) {
+      closeStoryViewer();
+      return;
+    }
+    storyIndex += 1;
+    openStoryViewer(storyList, storyIndex);
+  }
+
+  function prevStory() {
+    if (storyIndex > 0) {
+      storyIndex -= 1;
+      openStoryViewer(storyList, storyIndex);
+    }
+  }
+
+  function closeStoryViewer() {
+    storyViewerOpen = false;
+    if (storyProgressTimer) {
+      clearInterval(storyProgressTimer);
+      storyProgressTimer = null;
+    }
+    const viewer = document.getElementById("storyViewer");
+    if (viewer) viewer.classList.add("hidden");
+  }
+
+  function createStoryFromFile(file) {
+    if (!file || !file.type.startsWith("image/")) {
+      showToast("Pilih file gambar ya.", "error");
+      return;
+    }
+    (async () => {
+      try {
+        const fileJpeg = await compressImage(file);
+        const url = await uploadPhoto(fileJpeg);
+        const name = getUserName() || "Teman Magang";
+        await addDoc(collection(db, "stories"), {
+          url,
+          name,
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000
+        });
+        showToast("Story berhasil dikirim!", "success");
+      } catch (err) {
+        console.error("Gagal membuat story:", err);
+        showToast("Gagal membuat story. " + (err?.message || ""), "error");
+      }
+    })();
+  }
+
+  const storyMediaEl = document.getElementById("storyMedia");
+  const storyCloseBtn = document.getElementById("storyCloseBtn");
+  const storyDeleteBtn = document.getElementById("storyDeleteBtn");
+
+  storyMediaEl?.addEventListener("click", (e) => {
+    if (!storyViewerOpen) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.clientX - rect.left < rect.width / 2) prevStory();
+    else nextStory();
+  });
+
+  storyCloseBtn?.addEventListener("click", closeStoryViewer);
+
+  storyDeleteBtn?.addEventListener("click", async () => {
+    if (!storyList[storyIndex]) return;
+    const current = storyList[storyIndex];
+    const ok = confirm(`Yakin hapus story "${current.name}"?`);
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, "stories", current.id));
+      if (storyIndex + 1 >= storyList.length) closeStoryViewer();
+      else {
+        storyIndex += 1;
+        openStoryViewer(storyList, storyIndex);
+      }
+    } catch (err) {
+      console.error("Gagal hapus story:", err);
+      showToast("Gagal menghapus story.", "error");
+    }
+  });
+
+  document.getElementById("addStoryBtn")?.addEventListener("click", () => {
+    storyIntent = true;
+    photoFileInput.click();
   });
 
   function applyFilter() {
@@ -700,6 +904,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function onFileInputChange(event) {
     const file = event.target.files && event.target.files[0];
+    if (storyIntent) {
+      storyIntent = false;
+      createStoryFromFile(file);
+      return;
+    }
     setSelectedFile(file);
   }
 
@@ -858,6 +1067,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       setProgress(100, "Selesai!");
+      if (uploadPreview && imageUrl) uploadPreview.src = imageUrl;
       showToast(editId ? "Perubahan tersimpan." : "Foto masuk album!", "success");
 
       setTimeout(() => {

@@ -47,6 +47,11 @@
 
   <!-- Main Gallery Grid -->
   <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+    <!-- Daftar Stories -->
+    <div id="storiesRow" class="w-full mb-8 flex gap-3 overflow-x-auto items-center">
+      <button id="addStoryBtn" type="button" class="shrink-0 w-14 h-14 rounded-full bg-amber-400 text-stone-900 text-2xl font-bold">+</button>
+    </div>
+
     <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
       <!-- Loading state -->
       <div class="col-span-full py-20 text-center text-blue-200">
@@ -255,6 +260,24 @@
   </div>
 
   <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] flex flex-col gap-2 items-center pointer-events-none w-[min(92vw,24rem)]"></div>
+
+  <!-- Story Viewer Overlay -->
+  <div id="storyViewer" class="fixed inset-0 z-[90] bg-stone-950/95 hidden">
+    <div class="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div id="storyMedia" class="relative bg-black overflow-hidden" style="height: 100%; aspect-ratio: 9 / 16; width: auto;">
+        <img id="storyImg" src="" alt="" class="w-full h-full object-cover select-none" />
+      </div>
+    </div>
+    <div id="storyProgressTrack" class="absolute top-0 left-0 right-0 h-1 bg-white/30">
+      <div id="storyProgressBar" class="h-full bg-amber-400" style="width: 0%"></div>
+    </div>
+    <div class="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
+      <button id="storyDeleteBtn" type="button" class="w-10 h-10 rounded-full bg-black/60 text-white text-lg">🗑️</button>
+      <span id="storyName" class="text-white text-sm font-bold"></span>
+      <span id="storyTime" class="text-white/70 text-xs font-semibold"></span>
+      <button id="storyCloseBtn" type="button" class="w-10 h-10 rounded-full bg-black/60 text-white text-lg">✕</button>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="py-8 text-center text-blue-200 text-xs border-t border-white/10 mt-12">
