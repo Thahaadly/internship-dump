@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internship Journal 📸 | Dokumentasi Magang</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom CSS (Font & Polaroid styling) -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="text-white antialiased min-h-screen flex flex-col bg-[#00529C]">
+
+  <!-- Header / Hero Section -->
+  <header class="max-w-5xl mx-auto pt-10 pb-6 px-4 text-center">
+    <!-- User Identity Pill (Tampilkan nama pengguna saat ini) -->
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-medium mb-4 shadow-sm">
+      <span>👋 Halo, <strong id="currentUserNameDisplay" class="font-bold underline decoration-amber-300">Teman Magang</strong></span>
+      <button id="changeNameBtn" class="text-[10px] bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-white transition ml-1">Ganti Nama</button>
+    </div>
+
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-sm">
+      Internship Dump <span class="font-handwriting text-amber-300 text-5xl">2026</span>
+    </h1>
+    <p class="text-blue-100 max-w-xl mx-auto text-base sm:text-lg mb-6">
+      Kumpulan momen kecil, lembur santai, berburu kuliner, dan serunya perjalanan selama magang.
+    </p>
+
+    <!-- Tombol Tambah Momen Baru -->
+    <div class="mb-8">
+      <button id="openUploadBtn" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold bg-amber-400 text-stone-900 hover:bg-amber-300 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+        <span class="text-lg">📸</span> Tambah Momen Baru
+      </button>
+    </div>
+
+    <!-- Filter Kategori -->
+    <div class="flex flex-wrap justify-center gap-2">
+      <button data-filter="all" class="filter-btn px-4 py-2 rounded-full text-sm font-semibold transition shadow-md bg-white text-[#00529C]">Semua Momen</button>
+      <button data-filter="kantor" class="filter-btn px-4 py-2 rounded-full text-sm font-medium transition shadow-sm bg-white/15 text-white hover:bg-white/25 border border-white/20">🏢 Kantor & Desk</button>
+      <button data-filter="tim" class="filter-btn px-4 py-2 rounded-full text-sm font-medium transition shadow-sm bg-white/15 text-white hover:bg-white/25 border border-white/20">👥 Tim & Teman</button>
+      <button data-filter="kuliner" class="filter-btn px-4 py-2 rounded-full text-sm font-medium transition shadow-sm bg-white/15 text-white hover:bg-white/25 border border-white/20">🍜 Makan Siang</button>
+      <button data-filter="random" class="filter-btn px-4 py-2 rounded-full text-sm font-medium transition shadow-sm bg-white/15 text-white hover:bg-white/25 border border-white/20">☕ Random & Fun</button>
+    </div>
+  </header>
+
+  <!-- Main Gallery Grid -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+    <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+      <!-- Loading state -->
+      <div class="col-span-full py-20 text-center text-blue-200">
+        <p class="text-lg animate-pulse">Memuat album kenangan... ⏳</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Set / Ganti Nama Pengguna (Onboarding) -->
+  <div id="nameModal" class="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-stone-800 shadow-2xl relative text-center">
+      <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+        👋
+      </div>
+      <h2 class="text-xl font-bold text-stone-900 mb-1">Siapa Nama Kamu?</h2>
+      <p class="text-stone-500 text-xs mb-4">Nama ini akan tercantum saat kamu upload foto atau meninggalkan komentar di sini.</p>
+      
+      <form id="nameForm" class="space-y-3">
+        <input 
+          type="text" 
+          id="nameInput" 
+          required 
+          placeholder="Nama panggilan (misal: Herry)" 
+          class="w-full px-3.5 py-2.5 text-sm border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00529C] text-center font-semibold"
+        />
+        <button 
+          type="submit" 
+          class="w-full py-2.5 px-4 rounded-xl font-bold text-white bg-[#00529C] hover:bg-[#003d75] transition shadow-md active:scale-98"
+        >
+          Mulai Menjelajah 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal / Form Tambah atau Edit Momen -->
+  <div id="uploadModal" class="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="uploadModalContent" class="bg-white rounded-2xl max-w-lg w-full p-6 text-stone-800 shadow-2xl relative transition-all duration-200 transform scale-95 opacity-0 max-h-[90vh] overflow-y-auto">
+      <button id="closeUploadBtn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition" type="button">
+        ✕
+      </button>
+
+      <h2 id="modalFormHeading" class="text-2xl font-bold text-stone-900 mb-1">Tambah Foto Magang 📸</h2>
+      <p id="modalFormSubheading" class="text-stone-500 text-xs mb-4">Foto akan diabadikan dengan namamu: <strong id="uploaderPreviewName" class="text-[#00529C]"></strong></p>
+
+      <form id="uploadForm" class="space-y-4">
+        <input type="hidden" id="editDocId" value="">
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1" id="photoFileLabel">Foto *</label>
+          <input type="file" id="photoFileInput" accept="image/*" class="hidden" />
+          <input type="file" id="photoCameraInput" accept="image/*" capture="environment" class="hidden" />
+
+          <div id="photoDropzone" class="photo-dropzone rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 p-4 text-center cursor-pointer transition">
+            <div id="uploadPreviewWrap" class="hidden mb-3">
+              <img id="uploadPreview" alt="Preview foto" class="mx-auto max-h-40 rounded-lg object-contain">
+            </div>
+            <p id="dropzoneHint" class="text-sm font-semibold text-stone-700">Tarik foto ke sini, atau klik untuk pilih</p>
+            <p class="text-xs text-stone-400 mt-1">JPG / PNG dari galeri. Bisa juga pakai kamera HP.</p>
+            <div class="flex justify-center gap-2 mt-3">
+              <button type="button" id="pickGalleryBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-[#00529C] hover:bg-blue-100">Pilih foto</button>
+              <button type="button" id="pickCameraBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 hover:bg-amber-200">Kamera HP</button>
+            </div>
+          </div>
+          <p id="editPhotoNote" class="text-stone-400 text-xs mt-1 hidden">Biarkan jika tidak ingin mengganti foto yang sudah ada.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Judul Momen *</label>
+          <input 
+            type="text" 
+            id="photoTitleInput" 
+            required 
+            placeholder="misal: terserah" 
+            class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C] focus:border-transparent"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Tanggal *</label>
+            <input 
+              type="date" 
+              id="photoDateInput" 
+              required 
+              class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C] focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Kategori *</label>
+            <select 
+              id="photoCategoryInput" 
+              class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00529C] focus:border-transparent"
+            >
+              <option value="kantor">🏢 Kantor & Desk</option>
+              <option value="tim">👥 Tim & Teman</option>
+              <option value="kuliner">🍜 Makan Siang</option>
+              <option value="random">☕ Random & Fun</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Cerita di Balik Foto *</label>
+          <textarea 
+            id="photoCaptionInput" 
+            rows="3" 
+            required 
+            placeholder="Ceritakan kejadian lucu, seru, atau berkesan saat momen ini diambil..." 
+            class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C] focus:border-transparent"
+          ></textarea>
+        </div>
+
+        <div id="uploadProgressContainer" class="hidden">
+          <div class="flex justify-between text-xs text-stone-500 mb-1">
+            <span id="uploadStatusText">Menyimpan foto...</span>
+            <span id="uploadPercentage">0%</span>
+          </div>
+          <div class="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+            <div id="uploadProgressBar" class="bg-amber-400 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          id="submitUploadBtn" 
+          class="w-full py-3 px-4 rounded-xl font-bold text-white bg-[#00529C] hover:bg-[#003d75] transition shadow-md active:scale-98 flex items-center justify-center gap-2"
+        >
+          <span id="submitBtnText">Simpan ke Album Magang</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detail Foto + Lightbox + Comments Section -->
+  <div id="photoModal" class="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div id="modalContent" class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl transition-all duration-200 transform scale-95 opacity-0 relative my-auto">
+      <button id="closeModalBtn" class="absolute top-4 right-4 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black transition text-lg" aria-label="Close modal">
+        ✕
+      </button>
+
+      <!-- Gambar Foto -->
+      <div id="modalImageWrap" class="relative max-h-[50vh] bg-stone-900 flex items-center justify-center overflow-hidden">
+        <button id="prevPhotoBtn" type="button" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/55 text-white text-xl hover:bg-black/80 transition" aria-label="Foto sebelumnya">‹</button>
+        <img id="modalImg" src="" alt="" class="w-full h-full max-h-[50vh] object-contain select-none">
+        <button id="nextPhotoBtn" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/55 text-white text-xl hover:bg-black/80 transition" aria-label="Foto berikutnya">›</button>
+      </div>
+
+      <div class="p-5 sm:p-6">
+        <!-- Header Info Foto -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span id="modalCategory" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800"></span>
+            <span id="modalUploaderBadge" class="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full"></span>
+          </div>
+          <span id="modalDate" class="font-handwriting text-xl text-amber-700"></span>
+        </div>
+
+        <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold text-stone-900 mb-2"></h2>
+        <p id="modalCaption" class="text-stone-600 text-sm leading-relaxed mb-4"></p>
+
+        <div id="modalReactions" class="flex flex-wrap items-center gap-2 mb-4"></div>
+
+        <!-- Action Bar: Edit & Hapus -->
+        <div class="flex items-center justify-end gap-2 pb-4 border-b border-stone-100">
+          <button id="modalEditBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 transition">
+            ✏️ Edit Momen
+          </button>
+          <button id="modalDeleteBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition">
+            🗑️ Hapus
+          </button>
+        </div>
+
+        <!-- 💬 SEKSI KOMENTAR REAL-TIME -->
+        <div class="pt-4">
+          <h3 class="text-sm font-bold text-stone-800 mb-3 flex items-center gap-1.5">
+            <span>💬 Komentar Teman</span>
+            <span id="commentCountBadge" class="text-xs bg-blue-100 text-[#00529C] px-2 py-0.2 rounded-full font-semibold">0</span>
+          </h3>
+
+          <!-- List Komentar -->
+          <div id="commentsList" class="space-y-2.5 max-h-44 overflow-y-auto pr-1 mb-3">
+            <!-- Komentar akan di-render di sini -->
+          </div>
+
+          <!-- Form Kirim Komentar -->
+          <form id="commentForm" class="flex items-center gap-2 mt-2">
+            <input 
+              type="text" 
+              id="commentTextInput" 
+              required 
+              placeholder="Tulis komentar seru..." 
+              class="flex-1 px-3.5 py-2 text-xs sm:text-sm text-stone-900 bg-white placeholder-stone-400 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00529C] focus:bg-white"
+            />
+            <button 
+              type="submit" 
+              id="submitCommentBtn" 
+              class="px-4 py-2 bg-[#00529C] hover:bg-[#003d75] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-sm active:scale-95 flex items-center gap-1"
+            >
+              <span>Kirim</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] flex flex-col gap-2 items-center pointer-events-none w-[min(92vw,24rem)]"></div>
+
+  <!-- Footer -->
+  <footer class="py-8 text-center text-blue-200 text-xs border-t border-white/10 mt-12">
+    <p>Dibuat dengan ❤️ untuk dokumentasi kegiatan magang.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
