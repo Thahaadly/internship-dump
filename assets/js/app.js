@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const storiesQuery = query(
     collection(db, "stories"),
     where("expiresAt", ">", Date.now()),
-    orderBy("createdAt", "desc")
+    orderBy("expiresAt", "asc")
   );
 
   unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
@@ -392,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
     snapshot.forEach((docSnap) => {
       stories.push({ id: docSnap.id, ...docSnap.data() });
     });
+    stories.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
     renderStories();
   }, (error) => {
     console.error("Stories error:", error);
