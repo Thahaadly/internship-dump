@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const storiesQuery = query(
     collection(db, "stories"),
     where("expiresAt", ">", Date.now()),
-    orderBy("expiresAt", "asc")
+    orderBy("createdAt", "desc")
   );
 
   unsubscribeStories = onSnapshot(storiesQuery, (snapshot) => {
@@ -429,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
         img.alt = `Story ${story.name || "Teman Magang"}`;
         img.className = "w-full h-full object-cover";
         circle.appendChild(img);
-        circle.addEventListener("click", () => openStoryViewer(list, list.indexOf(story)));
+        circle.addEventListener("click", () => openStoryViewer(stories, stories.findIndex((s) => s.id === story.id)));
         row.appendChild(circle);
       });
     });
@@ -925,10 +925,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("takePhotoBtn")?.addEventListener("click", (e) => {
     e.stopPropagation();
+    storyIntent = true;
     photoCameraInput.click();
   });
   document.getElementById("pickGalleryFromBtn")?.addEventListener("click", (e) => {
     e.stopPropagation();
+    storyIntent = true;
     photoFileInput.click();
   });
   photoDropzone.addEventListener("click", () => photoFileInput.click());
