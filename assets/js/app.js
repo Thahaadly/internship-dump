@@ -923,6 +923,14 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
     photoCameraInput.click();
   });
+  document.getElementById("takePhotoBtn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    photoCameraInput.click();
+  });
+  document.getElementById("pickGalleryFromBtn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    photoFileInput.click();
+  });
   photoDropzone.addEventListener("click", () => photoFileInput.click());
 
   ["dragenter", "dragover"].forEach((eventName) => {
