@@ -1,4 +1,4 @@
-// Firebase Firestore + Storage (Modular SDK via CDN)
+// Firebase Firestore (Modular SDK via CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore,
@@ -14,13 +14,6 @@ import {
   orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBothEv081tS2ghZ2o0r4dO8qIzCCB_kD4",
@@ -34,7 +27,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 export {
   collection,
   doc,
@@ -46,9 +38,5 @@ export {
   onSnapshot,
   query,
   orderBy,
-  serverTimestamp,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject
+  serverTimestamp
 };

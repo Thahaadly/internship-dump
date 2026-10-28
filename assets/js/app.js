@@ -1,7 +1,6 @@
-// Galeri polaroid: CRUD, Storage, reaksi, lightbox, toast
+// Galeri polaroid: CRUD, upload, reaksi, lightbox, toast
 import {
   db,
-  storage,
   collection,
   doc,
   addDoc,
@@ -12,11 +11,7 @@ import {
   onSnapshot,
   query,
   orderBy,
-  serverTimestamp,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject
+  serverTimestamp
 } from "./firebase.js";
 
 const REACTIONS = [
@@ -592,15 +587,6 @@ document.addEventListener("DOMContentLoaded", () => {
     else showAdjacentPhoto(-1);
   }, { passive: true });
 
-  async function deleteStoredFile(path) {
-    if (!path) return;
-    try {
-      await deleteObject(ref(storage, path));
-    } catch (err) {
-      console.warn("Gagal hapus file Storage:", err);
-    }
-  }
-
   modalDeleteBtn.addEventListener("click", async () => {
     if (!activeSelectedPhoto) return;
     const confirmDelete = confirm(`Yakin hapus foto "${activeSelectedPhoto.title}"?`);
@@ -609,9 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       modalDeleteBtn.disabled = true;
       modalDeleteBtn.textContent = "Menghapus...";
-      const storagePath = activeSelectedPhoto.storagePath;
       await deleteDoc(doc(db, "internship_photos", activeSelectedPhoto.id));
-      await deleteStoredFile(storagePath);
       closeDetailModal();
       showToast("Foto dihapus dari album.", "success");
     } catch (err) {
@@ -751,7 +735,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setSelectedFile(file);
   });
 
-  function compressImageToBlob(file, maxWidth = 900, quality = 0.75) {
+  // Kompresi gambar lewat canvas, hasilkan File JPEG baru (maxWidth, quality)
+  function compressImage(file, maxWidth = 1600, quality = 0.8) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = reject;
@@ -778,7 +763,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 reject(new Error("Gagal mengompres foto."));
                 return;
               }
-              resolve(blob);
+              const compressedFile = new File(
+                [blob],
+                file.name.replace(/\.[^.]+$/, "") + ".jpg",
+                { type: "image/jpeg" }
+              );
+              resolve(compressedFile);
             },
             "image/jpeg",
             quality
@@ -790,28 +780,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function newStoragePath() {
-    const id = (crypto.randomUUID && crypto.randomUUID()) || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    return `photos/${id}.jpg`;
-  }
-
-  function uploadImageBlob(blob, path, onProgress) {
-    return new Promise((resolve, reject) => {
-      const storageRef = ref(storage, path);
-      const task = uploadBytesResumable(storageRef, blob, { contentType: "image/jpeg" });
-      task.on(
-        "state_changed",
-        (snap) => {
-          if (!snap.totalBytes) return;
-          onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100));
-        },
-        reject,
-        async () => {
-          const url = await getDownloadURL(task.snapshot.ref);
-          resolve(url);
-        }
-      );
+  // Upload foto ke serverless function Vercel (/api/upload) lalu return URL-nya
+  async function uploadPhoto(file) {
+    const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+      method: "POST",
+      headers: { "Content-Type": file.type },
+      body: file,
     });
+    if (!response.ok) {
+      throw new Error("Gagal mengunggah foto. Status: " + response.status);
+    }
+    const data = await response.json();
+    return data.url;
   }
 
   function setProgress(percent, status) {
@@ -839,18 +819,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (selectedFile) {
         setProgress(10, "Mengompresi foto...");
-        const blob = await compressImageToBlob(selectedFile);
-        storagePath = newStoragePath();
+        const file = await compressImage(selectedFile);
         setProgress(20, "Mengunggah ke album...");
-        imageUrl = await uploadImageBlob(blob, storagePath, (pct) => {
-          setProgress(20 + Math.round(pct * 0.7), "Mengunggah ke album...");
-        });
+        imageUrl = await uploadPhoto(file);
+        storagePath = imageUrl ? new URL(imageUrl).pathname.replace(/^\//, "") : null;
       }
 
       setProgress(95, "Menyimpan data...");
 
       if (editId) {
-        const current = allPhotos.find((photo) => photo.id === editId);
         const updateData = {
           title: photoTitleInput.value.trim(),
           date: photoDateInput.value,
@@ -863,9 +840,6 @@ document.addEventListener("DOMContentLoaded", () => {
           updateData.storagePath = storagePath;
         }
         await updateDoc(doc(db, "internship_photos", editId), updateData);
-        if (imageUrl && current?.storagePath) {
-          await deleteStoredFile(current.storagePath);
-        }
       } else {
         await addDoc(collection(db, "internship_photos"), {
           title: photoTitleInput.value.trim(),
@@ -890,14 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 350);
     } catch (err) {
       console.error("Error submit:", err);
-      const denied = String(err.code || err.message || "").includes("unauthorized")
-        || String(err.code || "").includes("storage/unauthorized");
-      showToast(
-        denied
-          ? "Upload Storage belum diizinkan. Deploy storage.rules dulu: firebase deploy --only storage"
-          : "Gagal menyimpan foto. " + (err?.message || err?.code || "Unknown error"),
-        "error"
-      );
+      showToast("Gagal menyimpan foto. " + (err?.message || err?.code || "Unknown error"), "error");
       uploadProgressContainer.classList.add("hidden");
       uploadProgressBar.style.width = "0%";
       uploadPercentage.textContent = "0%";
