@@ -788,7 +788,9 @@ document.addEventListener("DOMContentLoaded", () => {
       body: file,
     });
     if (!response.ok) {
-      throw new Error("Gagal mengunggah foto. Status: " + response.status);
+      const errorData = await response.json().catch(() => null);
+      console.error("Upload error:", errorData?.error || "Gagal mengunggah foto.");
+      throw new Error(errorData?.error || "Gagal mengunggah foto. Status: " + response.status);
     }
     const data = await response.json();
     return data.url;

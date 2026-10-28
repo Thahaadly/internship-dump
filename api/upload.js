@@ -25,8 +25,9 @@ export default {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    } catch (error) {
-      return new Response(JSON.stringify({ error: error?.message || "Upload gagal" }), {
+    } catch (err) {
+      console.error('Upload error:', err);
+      return new Response(JSON.stringify({ error: err.message }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
