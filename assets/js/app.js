@@ -930,19 +930,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const addStoryBtn = document.getElementById("addStoryBtn");
   const storyFileInput = document.getElementById("storyFileInput");
+  const storyCameraInput = document.getElementById("storyCameraInput");
+  const storySourceModal = document.getElementById("storySourceModal");
+  const closeStorySourceModalBtn = document.getElementById("closeStorySourceModalBtn");
+  const storyPickCameraBtn = document.getElementById("storyPickCameraBtn");
+  const storyPickGalleryBtn = document.getElementById("storyPickGalleryBtn");
 
   addStoryBtn?.addEventListener("click", () => {
     if (!requireUserName()) return;
+    storySourceModal?.classList.remove("hidden");
+  });
+
+  closeStorySourceModalBtn?.addEventListener("click", () => {
+    storySourceModal?.classList.add("hidden");
+  });
+
+  storyPickCameraBtn?.addEventListener("click", () => {
+    storySourceModal?.classList.add("hidden");
+    storyCameraInput?.click();
+  });
+
+  storyPickGalleryBtn?.addEventListener("click", () => {
+    storySourceModal?.classList.add("hidden");
     storyFileInput?.click();
   });
 
-  storyFileInput?.addEventListener("change", (e) => {
+  const onStorySelected = (e) => {
     const file = e.target.files && e.target.files[0];
     if (file) {
       createStoryFromFile(file);
     }
-    storyFileInput.value = "";
-  });
+    e.target.value = "";
+  };
+
+  storyFileInput?.addEventListener("change", onStorySelected);
+  storyCameraInput?.addEventListener("change", onStorySelected);
 
   function applyFilter() {
     renderGallery(getVisiblePhotos());

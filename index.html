@@ -134,8 +134,9 @@
     <!-- Daftar Stories -->
     <div class="w-full mb-8 flex gap-3 overflow-x-auto items-center">
       <button id="addStoryBtn" type="button" class="shrink-0 w-14 h-14 rounded-full bg-amber-400 text-stone-900 text-2xl font-bold hover:bg-amber-300 transition shadow-md flex items-center justify-center" title="Tambah Story 24 Jam">+</button>
-      <!-- Input terpisah khusus Story agar tidak bentrok dengan Kamera/Galeri Postingan Momen -->
+      <!-- Input terpisah khusus Story: Galeri & Kamera langsung -->
       <input type="file" id="storyFileInput" accept="image/*" class="hidden" />
+      <input type="file" id="storyCameraInput" accept="image/*" capture="environment" class="hidden" />
       <div id="storiesRow" class="flex gap-3 overflow-x-auto items-center"></div>
     </div>
 
@@ -463,6 +464,29 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Pilihan Sumber Story (Kamera / Galeri) -->
+  <div id="storySourceModal" class="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-stone-800 shadow-2xl relative text-center animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <button id="closeStorySourceModalBtn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition" type="button">
+        ✕
+      </button>
+      <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+        ⚡
+      </div>
+      <h3 class="text-xl font-extrabold text-stone-900 mb-1">Tambah Story 24 Jam</h3>
+      <p class="text-xs text-stone-500 mb-5">Pilih cara mengambil foto story untuk teman magang:</p>
+
+      <div class="flex flex-col gap-3">
+        <button id="storyPickCameraBtn" type="button" class="w-full py-3 px-4 rounded-2xl font-bold text-white bg-[#00529C] hover:bg-[#003d75] transition shadow-md flex items-center justify-center gap-2 text-sm active:scale-98">
+          <span class="text-lg">📷</span> Buka Kamera HP (Foto Langsung)
+        </button>
+        <button id="storyPickGalleryBtn" type="button" class="w-full py-3 px-4 rounded-2xl font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 transition flex items-center justify-center gap-2 text-sm active:scale-98">
+          <span class="text-lg">📁</span> Pilih dari Galeri Foto
+        </button>
+      </div>
     </div>
   </div>
 
