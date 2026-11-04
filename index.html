@@ -211,10 +211,8 @@
             <p id="dropzoneHint" class="text-sm font-semibold text-stone-700">Tarik foto ke sini, atau klik untuk pilih</p>
             <p class="text-xs text-stone-400 mt-1">JPG / PNG dari galeri. Bisa juga pakai kamera HP.</p>
             <div class="flex justify-center gap-2 mt-3">
-              <button type="button" id="pickGalleryBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-[#00529C] hover:bg-blue-100">Pilih foto</button>
-              <button type="button" id="pickCameraBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 hover:bg-amber-200">Kamera HP</button>
-              <button type="button" id="takePhotoBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 hover:bg-amber-200">Ambil Foto</button>
-              <button type="button" id="pickGalleryFromBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-[#00529C] hover:bg-blue-100">Pilih dari Galeri</button>
+              <button type="button" id="pickGalleryBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-[#00529C] hover:bg-blue-100 flex items-center gap-1">📁 Pilih dari Galeri</button>
+              <button type="button" id="pickCameraBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 hover:bg-amber-200 flex items-center gap-1">📷 Kamera HP</button>
             </div>
           </div>
           <p id="editPhotoNote" class="text-stone-400 text-xs mt-1 hidden">Biarkan jika tidak ingin mengganti foto yang sudah ada.</p>
@@ -253,6 +251,17 @@
               <option value="random">☕ Random & Fun</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Diupload Oleh (Akun Pemilik) *</label>
+          <select 
+            id="photoUploaderSelect" 
+            class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg bg-white font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#00529C] focus:border-transparent"
+          >
+            <!-- Diisi secara dinamis dari daftar member -->
+          </select>
+          <p class="text-[11px] text-stone-400 mt-1">Pilih siapa pemilik foto ini agar tersinkron ke halaman profilnya.</p>
         </div>
 
         <div>
@@ -399,7 +408,7 @@
             type="text" 
             id="memberRoleInput" 
             required 
-            placeholder="misal: Departement IT" 
+            placeholder="misal: Departement IT yahahaha" 
             class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C]"
           />
         </div>
@@ -409,7 +418,7 @@
           <input 
             type="text" 
             id="memberBioInput" 
-            placeholder="misal: Kopi dulu baru coding ☕" 
+            placeholder="bebas aja" 
             class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C]"
           />
         </div>

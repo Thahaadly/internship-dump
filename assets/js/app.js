@@ -115,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const photoTitleInput = document.getElementById("photoTitleInput");
   const photoDateInput = document.getElementById("photoDateInput");
   const photoCategoryInput = document.getElementById("photoCategoryInput");
+  const photoUploaderSelect = document.getElementById("photoUploaderSelect");
   const photoCaptionInput = document.getElementById("photoCaptionInput");
 
   const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-2", "rotate-0"];
@@ -1216,6 +1217,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dropzoneHint.textContent = "Ganti foto? Tarik atau pilih file baru";
 
     openUploadModal();
+    populateUploaderSelect(item.uploader || "");
   });
 
   openUploadBtn.addEventListener("click", () => {
@@ -1231,7 +1233,33 @@ document.addEventListener("DOMContentLoaded", () => {
     openUploadModal();
   });
 
+  function populateUploaderSelect(selectedName = "") {
+    if (!photoUploaderSelect) return;
+    photoUploaderSelect.innerHTML = "";
+
+    const currentName = selectedName || getUserName();
+
+    membersList.forEach((m) => {
+      const opt = document.createElement("option");
+      opt.value = m.name;
+      opt.textContent = `${m.name} (${m.role || "Magang"})`;
+      if (m.name.toLowerCase() === (currentName || "").toLowerCase()) {
+        opt.selected = true;
+      }
+      photoUploaderSelect.appendChild(opt);
+    });
+
+    if (currentName && !membersList.some((m) => m.name.toLowerCase() === currentName.toLowerCase())) {
+      const opt = document.createElement("option");
+      opt.value = currentName;
+      opt.textContent = `${currentName} (Tamu)`;
+      opt.selected = true;
+      photoUploaderSelect.appendChild(opt);
+    }
+  }
+
   function openUploadModal() {
+    populateUploaderSelect();
     uploadModal.classList.remove("hidden");
     setTimeout(() => {
       uploadModalContent.classList.remove("scale-95", "opacity-0");
@@ -1301,23 +1329,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   pickGalleryBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    storyIntent = false;
     photoFileInput.click();
   });
   pickCameraBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    storyIntent = false;
     photoCameraInput.click();
   });
-  document.getElementById("takePhotoBtn")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    storyIntent = true;
-    photoCameraInput.click();
-  });
-  document.getElementById("pickGalleryFromBtn")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    storyIntent = true;
+  photoDropzone.addEventListener("click", () => {
+    storyIntent = false;
     photoFileInput.click();
   });
-  photoDropzone.addEventListener("click", () => photoFileInput.click());
 
   ["dragenter", "dragover"].forEach((eventName) => {
     photoDropzone.addEventListener(eventName, (e) => {
@@ -1448,11 +1471,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       setProgress(95, "Menyimpan data...");
 
+      const chosenUploader = photoUploaderSelect ? photoUploaderSelect.value.trim() : userName;
+
       if (editId) {
         const updateData = {
           title: photoTitleInput.value.trim(),
           date: photoDateInput.value,
           category: photoCategoryInput.value,
+          uploader: chosenUploader || userName,
           caption: photoCaptionInput.value.trim(),
           updatedAt: serverTimestamp()
         };
@@ -1467,7 +1493,7 @@ document.addEventListener("DOMContentLoaded", () => {
           date: photoDateInput.value,
           category: photoCategoryInput.value,
           caption: photoCaptionInput.value.trim(),
-          uploader: userName,
+          uploader: chosenUploader || userName,
           image: imageUrl,
           storagePath,
           comments: [],
