@@ -49,6 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const visitingName = document.getElementById("visitingName");
   const visitingRole = document.getElementById("visitingRole");
   const visitingBio = document.getElementById("visitingBio");
+  const visitingPhotoCount = document.getElementById("visitingPhotoCount");
+  const visitingCommentCount = document.getElementById("visitingCommentCount");
+  const visitingReactionCount = document.getElementById("visitingReactionCount");
   const editVisitingMemberBtn = document.getElementById("editVisitingMemberBtn");
   const clearVisitingBtn = document.getElementById("clearVisitingBtn");
 
@@ -390,6 +393,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function updateVisitingStats(member) {
+    if (!member) return;
+    const nameLower = (member.name || "").toLowerCase();
+    const userLower = (member.username || "").toLowerCase();
+
+    // Hitung foto milik member ini
+    const memberPhotos = allPhotos.filter((item) => {
+      const uploader = (item.uploader || "").toLowerCase();
+      return uploader === nameLower || (userLower && uploader === userLower);
+    });
+
+    // Hitung total komentar dan reaksi yang diterima
+    let totalComments = 0;
+    let totalReactions = 0;
+    memberPhotos.forEach((photo) => {
+      totalComments += (photo.comments && photo.comments.length) || 0;
+      totalReactions += (photo.reactions && photo.reactions.length) || 0;
+    });
+
+    if (visitingPhotoCount) visitingPhotoCount.textContent = memberPhotos.length;
+    if (visitingCommentCount) visitingCommentCount.textContent = totalComments;
+    if (visitingReactionCount) visitingReactionCount.textContent = totalReactions;
+  }
+
   function visitMemberProfile(member) {
     visitedMember = member;
     renderMembersNav();
@@ -397,10 +424,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (member) {
       visitingBanner.classList.remove("hidden");
       visitingAvatar.src = member.avatar || "assets/images/ID_CARD.jpg";
-      visitingName.textContent = `Album ${member.name} 📸`;
+      visitingName.textContent = member.name;
       visitingRole.textContent = member.role || "Anak Magang";
       visitingBio.textContent = `"${member.bio || "Mendokumentasikan perjalanan magang 🚀"}"`;
-      showToast(`Melihat momen dari ${member.name}`, "info");
+      updateVisitingStats(member);
+      showToast(`Membuka profil ${member.name}`, "info");
     } else {
       visitingBanner.classList.add("hidden");
     }
@@ -638,9 +666,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const refreshed = membersList.find((m) => m.name.toLowerCase() === visitedMember.name.toLowerCase());
       if (refreshed) {
         visitingAvatar.src = refreshed.avatar || "assets/images/ID_CARD.jpg";
-        visitingName.textContent = `Album ${refreshed.name} 📸`;
-        visitingRole.textContent = refreshed.role;
-        visitingBio.textContent = `"${refreshed.bio}"`;
+        visitingName.textContent = refreshed.name;
+        visitingRole.textContent = refreshed.role || "Anak Magang";
+        visitingBio.textContent = `"${refreshed.bio || "Mendokumentasikan perjalanan magang 🚀"}"`;
+        updateVisitingStats(refreshed);
       }
     }
     const currentName = getUserName();

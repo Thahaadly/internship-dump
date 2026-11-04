@@ -43,22 +43,61 @@
       </div>
     </div>
 
-    <!-- Banner Kunjungan Profil (Muncul saat sedang berkunjung ke profil teman) -->
-    <div id="visitingBanner" class="hidden mb-6 max-w-xl mx-auto bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-4 text-white text-center shadow-lg transition-all">
-      <div class="flex items-center justify-center gap-3 mb-2">
-        <img id="visitingAvatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-amber-300 shadow">
-        <div class="text-left">
-          <div class="flex items-center gap-2">
-            <h2 id="visitingName" class="text-lg font-bold leading-tight">Nama Anggota</h2>
-            <button id="editVisitingMemberBtn" class="text-[11px] bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-white transition">✏️ Edit</button>
+    <!-- Banner Kunjungan Profil (Desain Besar ala Profil Instagram / LinkedIn) -->
+    <div id="visitingBanner" class="hidden mb-8 max-w-3xl mx-auto bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative transition-all">
+      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+        <!-- Foto Profil Besar dengan Ring & Badge -->
+        <div class="relative shrink-0">
+          <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-pink-500 to-amber-200 shadow-xl">
+            <img id="visitingAvatar" src="" class="w-full h-full rounded-full object-cover border-4 border-[#00529C] bg-white">
           </div>
-          <p id="visitingRole" class="text-xs text-amber-200 font-medium">Divisi</p>
+          <span class="absolute bottom-1 right-2 bg-amber-400 text-stone-900 text-xs px-2 py-0.5 rounded-full font-extrabold shadow">Magang</span>
+        </div>
+
+        <!-- Detail Identitas & Bio -->
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div>
+              <div class="flex items-center justify-center sm:justify-start gap-2.5">
+                <h2 id="visitingName" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow">Nama Anggota</h2>
+                <span class="text-amber-300 text-xl" title="Verified Intern">✨</span>
+              </div>
+              <p id="visitingRole" class="text-sm sm:text-base text-amber-200 font-semibold mt-0.5">Divisi</p>
+            </div>
+
+            <!-- Tombol Aksi Profil -->
+            <div class="flex items-center justify-center gap-2">
+              <button id="editVisitingMemberBtn" class="px-4 py-1.5 rounded-full text-xs font-bold bg-white/20 hover:bg-white/30 text-white transition border border-white/30 flex items-center gap-1 shadow-sm">
+                <span>✏️</span> Edit Profil
+              </button>
+              <button id="clearVisitingBtn" class="px-4 py-1.5 rounded-full text-xs font-bold bg-white text-[#00529C] hover:bg-blue-50 transition shadow-md">
+                ✕ Tutup
+              </button>
+            </div>
+          </div>
+
+          <!-- Bio Kutipan -->
+          <div class="bg-black/15 border border-white/10 rounded-2xl p-3.5 mb-4 backdrop-blur-sm">
+            <p id="visitingBio" class="text-sm text-blue-50 italic leading-relaxed">"Bio..."</p>
+          </div>
+
+          <!-- Counter Statistik ala Profil Sosmed -->
+          <div class="flex items-center justify-center sm:justify-start gap-6 text-xs sm:text-sm font-semibold border-t border-white/15 pt-3">
+            <div>
+              <span id="visitingPhotoCount" class="text-lg font-black text-amber-300">0</span>
+              <span class="text-blue-100 ml-1">Momen Foto</span>
+            </div>
+            <div>
+              <span id="visitingCommentCount" class="text-lg font-black text-amber-300">0</span>
+              <span class="text-blue-100 ml-1">Komentar</span>
+            </div>
+            <div>
+              <span id="visitingReactionCount" class="text-lg font-black text-amber-300">0</span>
+              <span class="text-blue-100 ml-1">Reaksi Diterima</span>
+            </div>
+          </div>
         </div>
       </div>
-      <p id="visitingBio" class="text-xs text-blue-100 italic mb-3">"Bio..."</p>
-      <button id="clearVisitingBtn" class="px-4 py-1.5 rounded-full text-xs font-bold bg-white text-[#00529C] hover:bg-blue-50 transition shadow">
-        ← Kembali ke Semua Momen
-      </button>
     </div>
 
     <!-- Tombol Tambah Momen Baru -->
