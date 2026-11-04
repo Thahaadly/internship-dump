@@ -27,6 +27,7 @@ const REACTIONS = [
 document.addEventListener("DOMContentLoaded", () => {
   const galleryGrid = document.getElementById("galleryGrid");
   const filterButtons = document.querySelectorAll(".filter-btn");
+  const sortSelect = document.getElementById("sortSelect");
   const toastContainer = document.getElementById("toastContainer");
 
   const currentUserNameDisplay = document.getElementById("currentUserNameDisplay");
@@ -88,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-2", "rotate-0"];
   let allPhotos = [];
   let currentFilter = "all";
+  let currentSort = "newest";
   let activeSelectedPhoto = null;
   let selectedFile = null;
   let previewObjectUrl = null;
@@ -190,9 +192,37 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/"/g, "&quot;");
   }
 
+  function getPhotoTime(photo) {
+    if (photo.createdAt) {
+      if (typeof photo.createdAt.toMillis === "function") {
+        return photo.createdAt.toMillis();
+      }
+      if (photo.createdAt.seconds) {
+        return photo.createdAt.seconds * 1000;
+      }
+      if (typeof photo.createdAt === "number") {
+        return photo.createdAt;
+      }
+    }
+    if (photo.date) {
+      const parsed = Date.parse(photo.date);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    return 0;
+  }
+
   function getVisiblePhotos() {
-    if (currentFilter === "all") return allPhotos;
-    return allPhotos.filter((item) => item.category === currentFilter);
+    let list = currentFilter === "all"
+      ? [...allPhotos]
+      : allPhotos.filter((item) => item.category === currentFilter);
+
+    list.sort((a, b) => {
+      const timeA = getPhotoTime(a);
+      const timeB = getPhotoTime(b);
+      return currentSort === "oldest" ? timeA - timeB : timeB - timeA;
+    });
+
+    return list;
   }
 
   function reactionCounts(photo) {
@@ -572,6 +602,13 @@ document.addEventListener("DOMContentLoaded", () => {
       applyFilter();
     });
   });
+
+  if (sortSelect) {
+    sortSelect.addEventListener("change", (e) => {
+      currentSort = e.target.value;
+      applyFilter();
+    });
+  }
 
   function fillDetailModal(item) {
     activeSelectedPhoto = item;
