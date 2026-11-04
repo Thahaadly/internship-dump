@@ -27,7 +27,7 @@
       Internship Dump <span class="font-handwriting text-amber-300 text-5xl">2026</span>
     </h1>
     <p class="text-blue-100 max-w-xl mx-auto text-base sm:text-lg mb-6">
-      Kumpulan momen kecil, lembur santai, berburu kuliner, dan serunya perjalanan selama magang.
+      Momen-momen Maganghub BRI Lantai 3 lantai 3,5 dan lantai 4
     </p>
 
     <!-- Navigasi Member / Kunjungi Profil Teman -->
@@ -133,9 +133,11 @@
   <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
     <!-- Daftar Stories -->
     <div class="w-full mb-8 flex gap-3 overflow-x-auto items-center">
-      <button id="addStoryBtn" type="button" class="shrink-0 w-14 h-14 rounded-full bg-amber-400 text-stone-900 text-2xl font-bold">+</button>
+      <button id="addStoryBtn" type="button" class="shrink-0 w-14 h-14 rounded-full bg-amber-400 text-stone-900 text-2xl font-bold hover:bg-amber-300 transition shadow-md flex items-center justify-center" title="Tambah Story 24 Jam">+</button>
+      <!-- Input terpisah khusus Story agar tidak bentrok dengan Kamera/Galeri Postingan Momen -->
+      <input type="file" id="storyFileInput" accept="image/*" class="hidden" />
+      <div id="storiesRow" class="flex gap-3 overflow-x-auto items-center"></div>
     </div>
-    <div id="storiesRow" class="w-full mb-8 flex gap-3 overflow-x-auto items-center"></div>
 
     <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
       <!-- Loading state -->

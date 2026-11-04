@@ -138,7 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let storyList = [];
   let storyIndex = 0;
   let storyProgressTimer = null;
-  let storyIntent = false;
 
   function showToast(message, type = "info") {
     if (!toastContainer) return;
@@ -880,7 +879,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     (async () => {
       try {
-        const fileJpeg = await compressImage(file);
+        showToast("Mengompresi & mengunggah story...", "info");
+        const fileJpeg = await compressImage(file, 1080, 0.75);
         const url = await uploadPhoto(fileJpeg);
         const name = getUserName() || "Teman Magang";
         await addDoc(collection(db, "stories"), {
@@ -889,7 +889,7 @@ document.addEventListener("DOMContentLoaded", () => {
           createdAt: Date.now(),
           expiresAt: Date.now() + 24 * 60 * 60 * 1000
         });
-        showToast("Story berhasil dikirim!", "success");
+        showToast("Story berhasil dikirim! 🚀", "success");
       } catch (err) {
         console.error("Gagal membuat story:", err);
         showToast("Gagal membuat story. " + (err?.message || ""), "error");
@@ -928,9 +928,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("addStoryBtn")?.addEventListener("click", () => {
-    storyIntent = true;
-    photoFileInput.click();
+  const addStoryBtn = document.getElementById("addStoryBtn");
+  const storyFileInput = document.getElementById("storyFileInput");
+
+  addStoryBtn?.addEventListener("click", () => {
+    if (!requireUserName()) return;
+    storyFileInput?.click();
+  });
+
+  storyFileInput?.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      createStoryFromFile(file);
+    }
+    storyFileInput.value = "";
   });
 
   function applyFilter() {
@@ -1316,12 +1327,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function onFileInputChange(event) {
     const file = event.target.files && event.target.files[0];
-    if (storyIntent) {
-      storyIntent = false;
-      createStoryFromFile(file);
-      return;
+    if (file) {
+      setSelectedFile(file);
     }
-    setSelectedFile(file);
   }
 
   photoFileInput.addEventListener("change", onFileInputChange);
@@ -1329,16 +1337,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   pickGalleryBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    storyIntent = false;
     photoFileInput.click();
   });
   pickCameraBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    storyIntent = false;
     photoCameraInput.click();
   });
   photoDropzone.addEventListener("click", () => {
-    storyIntent = false;
     photoFileInput.click();
   });
 
