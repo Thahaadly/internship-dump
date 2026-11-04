@@ -423,11 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
       memberAvatarInput.value = member.avatar || "";
       memberAvatarPreview.src = member.avatar || "assets/images/ID_CARD.jpg";
       submitMemberBtn.textContent = "Simpan Perubahan 💾";
-      if (member.id) {
-        deleteMemberBtn.classList.remove("hidden");
-      } else {
-        deleteMemberBtn.classList.add("hidden");
-      }
+      deleteMemberBtn.classList.remove("hidden");
     } else {
       memberModalHeading.textContent = "Tambah Anggota Magang Baru 👤";
       memberDocId.value = "";
@@ -560,20 +556,54 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hapus Member dari Firestore
   deleteMemberBtn?.addEventListener("click", async () => {
     const docId = memberDocId.value;
-    const name = memberNameInput.value;
-    if (!docId) return;
-    if (!confirm(`Yakin ingin menghapus anggota "${name}"?`)) return;
+    const name = memberNameInput.value.trim();
+    if (!name && !docId) return;
+    if (!confirm(`Yakin ingin menghapus anggota "${name || "ini"}"?`)) return;
 
     try {
-      await deleteDoc(doc(db, "members", docId));
-      showToast(`Anggota ${name} telah dihapus.`, "info");
-      if (visitedMember && visitedMember.id === docId) {
+      deleteMemberBtn.disabled = true;
+
+      // 1. Catat ke localStorage daftar anggota default/hardcoded yang dihapus
+      const deletedDefaults = JSON.parse(localStorage.getItem("internship_deleted_members") || "[]");
+      if (name && !deletedDefaults.includes(name.toLowerCase())) {
+        deletedDefaults.push(name.toLowerCase());
+        localStorage.setItem("internship_deleted_members", JSON.stringify(deletedDefaults));
+      }
+
+      // 2. Hapus dokumen di Firestore jika ada docId
+      if (docId) {
+        await deleteDoc(doc(db, "members", docId));
+      } else {
+        // Cari di Firestore jika ada dokumen dengan nama ini
+        const q = query(collection(db, "members"), where("name", "==", name));
+        const snap = await onSnapshot(q, (s) => {
+          s.forEach(async (d) => {
+            await deleteDoc(doc(db, "members", d.id));
+          });
+        });
+      }
+
+      // 3. Update list lokal secara langsung
+      membersList = membersList.filter((m) => {
+        if (docId && m.id === docId) return false;
+        if (name && m.name.toLowerCase() === name.toLowerCase()) return false;
+        return true;
+      });
+
+      renderMembersNav();
+      renderMemberSelection();
+
+      if (visitedMember && (visitedMember.id === docId || visitedMember.name.toLowerCase() === name.toLowerCase())) {
         visitMemberProfile(null);
       }
+
+      showToast(`Anggota "${name}" berhasil dihapus.`, "info");
       closeMemberFormModal();
     } catch (err) {
       console.error("Gagal hapus member:", err);
       showToast("Gagal menghapus anggota.", "error");
+    } finally {
+      deleteMemberBtn.disabled = false;
     }
   });
 
@@ -585,31 +615,25 @@ document.addEventListener("DOMContentLoaded", () => {
       dbMembers.push({ id: d.id, ...d.data() });
     });
 
+    const deletedDefaults = JSON.parse(localStorage.getItem("internship_deleted_members") || "[]");
+
     if (dbMembers.length > 0) {
       // Gabungkan member bawaan dengan yang di Firestore (Firestore lebih prioritas)
       const merged = [...dbMembers];
       INTERN_MEMBERS.forEach((initMember) => {
-        if (!merged.some((m) => m.name.toLowerCase() === initMember.name.toLowerCase())) {
+        const isDeleted = deletedDefaults.includes(initMember.name.toLowerCase());
+        if (!isDeleted && !merged.some((m) => m.name.toLowerCase() === initMember.name.toLowerCase())) {
           merged.push(initMember);
         }
       });
-      membersList = merged;
+      // Saring juga dbMembers yang mungkin masuk daftar deleted
+      membersList = merged.filter((m) => !deletedDefaults.includes((m.name || "").toLowerCase()));
     } else {
-      // Jika Firestore masih kosong, auto-seed INTERN_MEMBERS ke Firestore agar langsung bisa diedit
-      INTERN_MEMBERS.forEach(async (initMember) => {
-        try {
-          await addDoc(collection(db, "members"), {
-            ...initMember,
-            createdAt: serverTimestamp()
-          });
-        } catch (e) {
-          console.error("Seed member error:", e);
-        }
-      });
-      membersList = [...INTERN_MEMBERS];
+      membersList = INTERN_MEMBERS.filter((m) => !deletedDefaults.includes(m.name.toLowerCase()));
     }
 
     renderMembersNav();
+    renderMemberSelection();
     if (visitedMember) {
       const refreshed = membersList.find((m) => m.name.toLowerCase() === visitedMember.name.toLowerCase());
       if (refreshed) {
