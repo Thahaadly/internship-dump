@@ -1,4 +1,5 @@
 // Galeri polaroid: CRUD, upload, reaksi, lightbox, toast
+import { INTERN_MEMBERS } from "./members.js";
 import {
   db,
   collection,
@@ -31,11 +32,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const toastContainer = document.getElementById("toastContainer");
 
   const currentUserNameDisplay = document.getElementById("currentUserNameDisplay");
+  const currentUserAvatar = document.getElementById("currentUserAvatar");
   const changeNameBtn = document.getElementById("changeNameBtn");
   const nameModal = document.getElementById("nameModal");
+  const memberSelectGrid = document.getElementById("memberSelectGrid");
   const nameForm = document.getElementById("nameForm");
   const nameInput = document.getElementById("nameInput");
   const uploaderPreviewName = document.getElementById("uploaderPreviewName");
+
+  const membersNavRow = document.getElementById("membersNavRow");
+  const visitingBanner = document.getElementById("visitingBanner");
+  const visitingAvatar = document.getElementById("visitingAvatar");
+  const visitingName = document.getElementById("visitingName");
+  const visitingRole = document.getElementById("visitingRole");
+  const visitingBio = document.getElementById("visitingBio");
+  const clearVisitingBtn = document.getElementById("clearVisitingBtn");
 
   const photoModal = document.getElementById("photoModal");
   const modalContent = document.getElementById("modalContent");
@@ -90,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let allPhotos = [];
   let currentFilter = "all";
   let currentSort = "newest";
+  let visitedMember = null; // null jika di feed utama, atau username jika berkunjung ke profil teman
   let activeSelectedPhoto = null;
   let selectedFile = null;
   let previewObjectUrl = null;
@@ -124,17 +136,23 @@ document.addEventListener("DOMContentLoaded", () => {
     return localStorage.getItem("internship_user_name") || "";
   }
 
+  function getUserAvatar(name) {
+    const member = INTERN_MEMBERS.find((m) => m.name.toLowerCase() === (name || "").toLowerCase() || m.username.toLowerCase() === (name || "").toLowerCase());
+    return member ? member.avatar : "assets/images/ID_CARD.jpg";
+  }
+
   function setUserName(name) {
     localStorage.setItem("internship_user_name", name);
-    currentUserNameDisplay.textContent = name;
-    uploaderPreviewName.textContent = name;
+    if (currentUserNameDisplay) currentUserNameDisplay.textContent = name;
+    if (uploaderPreviewName) uploaderPreviewName.textContent = name;
+    if (currentUserAvatar) currentUserAvatar.src = getUserAvatar(name);
   }
 
   function requireUserName() {
     const name = getUserName();
     if (name) return name;
-    nameModal.classList.remove("hidden");
-    showToast("Isi nama dulu ya, biar kelihatan siapa yang upload.", "info");
+    openProfileModal();
+    showToast("Pilih profilmu dulu ya, biar kelihatan siapa yang berkegiatan.", "info");
     return "";
   }
 
@@ -212,9 +230,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getVisiblePhotos() {
-    let list = currentFilter === "all"
-      ? [...allPhotos]
-      : allPhotos.filter((item) => item.category === currentFilter);
+    let list = [...allPhotos];
+
+    // Filter jika sedang mengunjungi profil teman tertentu
+    if (visitedMember) {
+      list = list.filter((item) => {
+        const uploader = (item.uploader || "").toLowerCase();
+        return uploader === visitedMember.name.toLowerCase() || uploader === visitedMember.username.toLowerCase();
+      });
+    }
+
+    // Filter kategori jika bukan "all"
+    if (currentFilter !== "all") {
+      list = list.filter((item) => item.category === currentFilter);
+    }
 
     list.sort((a, b) => {
       const timeA = getPhotoTime(a);
@@ -288,13 +317,89 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function openProfileModal() {
+    renderMemberSelection();
+    nameModal.classList.remove("hidden");
+  }
+
+  function renderMemberSelection() {
+    if (!memberSelectGrid) return;
+    memberSelectGrid.innerHTML = "";
+    INTERN_MEMBERS.forEach((m) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "flex flex-col items-center p-3 rounded-2xl border-2 border-stone-200 hover:border-[#00529C] hover:bg-blue-50/50 transition group";
+      card.innerHTML = `
+        <img src="${m.avatar}" alt="${m.name}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-white shadow group-hover:scale-105 transition-transform">
+        <span class="font-bold text-sm text-stone-900 group-hover:text-[#00529C]">${m.name}</span>
+        <span class="text-[10px] text-stone-500 text-center leading-tight mt-0.5 line-clamp-1">${m.role}</span>
+      `;
+      card.addEventListener("click", () => {
+        setUserName(m.name);
+        nameModal.classList.add("hidden");
+        showToast(`Selamat datang kembali, ${m.name}! 🎉`, "success");
+      });
+      memberSelectGrid.appendChild(card);
+    });
+  }
+
+  function renderMembersNav() {
+    if (!membersNavRow) return;
+    membersNavRow.innerHTML = "";
+
+    // Tombol "Semua Momen" di nav profil
+    const allBtn = document.createElement("button");
+    allBtn.className = `flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm ${
+      !visitedMember ? "bg-amber-400 text-stone-900 ring-2 ring-white" : "bg-white/20 text-white hover:bg-white/30"
+    }`;
+    allBtn.innerHTML = `<span>🌟</span> Semua Tim`;
+    allBtn.addEventListener("click", () => visitMemberProfile(null));
+    membersNavRow.appendChild(allBtn);
+
+    INTERN_MEMBERS.forEach((m) => {
+      const isSelected = visitedMember && visitedMember.username === m.username;
+      const btn = document.createElement("button");
+      btn.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm ${
+        isSelected ? "bg-amber-400 text-stone-900 ring-2 ring-white scale-105" : "bg-white/20 text-white hover:bg-white/30"
+      }`;
+      btn.innerHTML = `
+        <img src="${m.avatar}" alt="${m.name}" class="w-5 h-5 rounded-full object-cover">
+        <span>${m.name}</span>
+      `;
+      btn.addEventListener("click", () => visitMemberProfile(m));
+      membersNavRow.appendChild(btn);
+    });
+  }
+
+  function visitMemberProfile(member) {
+    visitedMember = member;
+    renderMembersNav();
+
+    if (member) {
+      visitingBanner.classList.remove("hidden");
+      visitingAvatar.src = member.avatar;
+      visitingName.textContent = `Album ${member.name} 📸`;
+      visitingRole.textContent = member.role;
+      visitingBio.textContent = `"${member.bio}"`;
+      showToast(`Melihat momen dari ${member.name}`, "info");
+    } else {
+      visitingBanner.classList.add("hidden");
+    }
+
+    applyFilter();
+  }
+
+  if (clearVisitingBtn) {
+    clearVisitingBtn.addEventListener("click", () => visitMemberProfile(null));
+  }
+
   const savedName = getUserName();
   if (!savedName) {
-    nameModal.classList.remove("hidden");
+    openProfileModal();
   } else {
-    currentUserNameDisplay.textContent = savedName;
-    uploaderPreviewName.textContent = savedName;
+    setUserName(savedName);
   }
+  renderMembersNav();
 
   nameForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -302,13 +407,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (entered) {
       setUserName(entered);
       nameModal.classList.add("hidden");
+      showToast(`Selamat datang, ${entered}! 🚀`, "success");
     }
   });
 
   changeNameBtn.addEventListener("click", () => {
-    nameInput.value = getUserName();
-    nameModal.classList.remove("hidden");
-    nameInput.focus();
+    openProfileModal();
   });
 
   function renderGallery(items) {
@@ -345,6 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : rawCaption;
       const commentCount = (item.comments && item.comments.length) || 0;
       const uploader = item.uploader || "Teman Magang";
+      const uploaderAvatar = getUserAvatar(uploader);
       const imageSrc = escapeHtml(item.image || "");
 
       card.innerHTML = `
@@ -366,8 +471,11 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="reaction-row flex items-center justify-center gap-1 mb-2">
             ${reactionButtonsHtml(item, true)}
           </div>
-          <div class="flex items-center justify-between text-[11px] text-stone-400 border-t border-stone-100 pt-1.5 mt-1">
-            <span class="truncate max-w-[130px] text-left">📸 ${escapeHtml(uploader)}</span>
+          <div class="flex items-center justify-between text-[11px] text-stone-500 border-t border-stone-100 pt-1.5 mt-1">
+            <span class="inline-flex items-center gap-1.5 truncate max-w-[140px] text-left font-medium">
+              <img src="${uploaderAvatar}" class="w-4 h-4 rounded-full object-cover border border-stone-300">
+              ${escapeHtml(uploader)}
+            </span>
             <span class="inline-flex items-center gap-0.5 text-stone-500 font-medium">💬 ${commentCount}</span>
           </div>
         </div>
@@ -992,8 +1100,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setSelectedFile(file);
   });
 
-  // Kompresi gambar lewat canvas, hasilkan File JPEG baru (maxWidth, quality)
-  function compressImage(file, maxWidth = 1600, quality = 0.8) {
+  // Kompresi gambar lewat canvas, hasilkan File JPEG baru (maxWidth, maxHeight, quality)
+  function compressImage(file, maxDimension = 1280, quality = 0.75) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = reject;
@@ -1001,19 +1109,32 @@ document.addEventListener("DOMContentLoaded", () => {
         const img = new Image();
         img.onerror = () => reject(new Error("Format gambar tidak didukung."));
         img.onload = () => {
-          const canvas = document.createElement("canvas");
           let width = img.width;
           let height = img.height;
 
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
+          // Batasi resolusi maksimum (baik lebar maupun tinggi) agar hemat storage & bandwidth
+          if (width > height) {
+            if (width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            }
+          } else {
+            if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
           }
 
+          const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
+
+          // Gambar ulang ke canvas dengan image smoothing aktif
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
           ctx.drawImage(img, 0, 0, width, height);
+
           canvas.toBlob(
             (blob) => {
               if (!blob) {
@@ -1024,6 +1145,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 [blob],
                 file.name.replace(/\.[^.]+$/, "") + ".jpg",
                 { type: "image/jpeg" }
+              );
+              console.log(
+                `[Compress] Dari ${(file.size / 1024).toFixed(1)} KB -> ${(compressedFile.size / 1024).toFixed(1)} KB (${width}x${height})`
               );
               resolve(compressedFile);
             },
