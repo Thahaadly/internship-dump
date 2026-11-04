@@ -1,5 +1,4 @@
 // Galeri polaroid: CRUD, upload, reaksi, lightbox, toast
-import { INTERN_MEMBERS } from "./members.js";
 import {
   db,
   collection,
