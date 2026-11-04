@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const photoCaptionInput = document.getElementById("photoCaptionInput");
 
   const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-2", "rotate-0"];
-  let membersList = [...INTERN_MEMBERS];
+  let membersList = [];
   let allPhotos = [];
   let currentFilter = "all";
   let currentSort = "newest";
@@ -530,7 +530,7 @@ document.addEventListener("DOMContentLoaded", () => {
       submitMemberBtn.textContent = "Menyimpan...";
 
       if (docId) {
-        // Update document yang ada
+        // Update document yang ada di Firestore
         const memberRef = doc(db, "members", docId);
         await updateDoc(memberRef, {
           name,
@@ -541,27 +541,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         showToast(`Profil ${name} berhasil diperbarui!`, "success");
       } else {
-        // Cek jika member dari file awal mau di-save ke Firestore
-        const existingInit = membersList.find((m) => m.name.toLowerCase() === name.toLowerCase());
-        if (existingInit && existingInit.id) {
-          await updateDoc(doc(db, "members", existingInit.id), {
-            name,
-            role,
-            bio,
-            avatar,
-            updatedAt: serverTimestamp()
-          });
-        } else {
-          // Tambah member baru
-          await addDoc(collection(db, "members"), {
-            name,
-            username: name.toLowerCase().replace(/\s+/g, "_"),
-            role,
-            bio,
-            avatar,
-            createdAt: serverTimestamp()
-          });
-        }
+        // Tambah member baru ke Firestore
+        await addDoc(collection(db, "members"), {
+          name,
+          username: name.toLowerCase().replace(/\s+/g, "_"),
+          role,
+          bio,
+          avatar,
+          createdAt: serverTimestamp()
+        });
         showToast(`Anggota ${name} berhasil ditambahkan! 🎉`, "success");
       }
 
@@ -580,47 +568,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Hapus Member dari Firestore
+  // Hapus Member murni dari Firestore
   deleteMemberBtn?.addEventListener("click", async () => {
     const docId = memberDocId.value;
     const name = memberNameInput.value.trim();
-    if (!name && !docId) return;
+    if (!docId) {
+      showToast("ID anggota tidak ditemukan.", "error");
+      return;
+    }
     if (!confirm(`Yakin ingin menghapus anggota "${name || "ini"}"?`)) return;
 
     try {
       deleteMemberBtn.disabled = true;
+      deleteMemberBtn.textContent = "Menghapus...";
 
-      // 1. Catat ke localStorage daftar anggota default/hardcoded yang dihapus
-      const deletedDefaults = JSON.parse(localStorage.getItem("internship_deleted_members") || "[]");
-      if (name && !deletedDefaults.includes(name.toLowerCase())) {
-        deletedDefaults.push(name.toLowerCase());
-        localStorage.setItem("internship_deleted_members", JSON.stringify(deletedDefaults));
-      }
+      await deleteDoc(doc(db, "members", docId));
 
-      // 2. Hapus dokumen di Firestore jika ada docId
-      if (docId) {
-        await deleteDoc(doc(db, "members", docId));
-      } else {
-        // Cari di Firestore jika ada dokumen dengan nama ini
-        const q = query(collection(db, "members"), where("name", "==", name));
-        const snap = await onSnapshot(q, (s) => {
-          s.forEach(async (d) => {
-            await deleteDoc(doc(db, "members", d.id));
-          });
-        });
-      }
-
-      // 3. Update list lokal secara langsung
-      membersList = membersList.filter((m) => {
-        if (docId && m.id === docId) return false;
-        if (name && m.name.toLowerCase() === name.toLowerCase()) return false;
-        return true;
-      });
-
-      renderMembersNav();
-      renderMemberSelection();
-
-      if (visitedMember && (visitedMember.id === docId || visitedMember.name.toLowerCase() === name.toLowerCase())) {
+      if (visitedMember && visitedMember.id === docId) {
         visitMemberProfile(null);
       }
 
@@ -631,46 +595,36 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("Gagal menghapus anggota.", "error");
     } finally {
       deleteMemberBtn.disabled = false;
+      deleteMemberBtn.textContent = "🗑️";
     }
   });
 
-  // Sync Realtime Member dari Firestore
-  const membersQuery = query(collection(db, "members"));
+  // Sync Realtime Member 100% dari Firestore
+  const membersQuery = query(collection(db, "members"), orderBy("createdAt", "asc"));
   onSnapshot(membersQuery, (snapshot) => {
     const dbMembers = [];
     snapshot.forEach((d) => {
       dbMembers.push({ id: d.id, ...d.data() });
     });
 
-    const deletedDefaults = JSON.parse(localStorage.getItem("internship_deleted_members") || "[]");
-
-    if (dbMembers.length > 0) {
-      // Gabungkan member bawaan dengan yang di Firestore (Firestore lebih prioritas)
-      const merged = [...dbMembers];
-      INTERN_MEMBERS.forEach((initMember) => {
-        const isDeleted = deletedDefaults.includes(initMember.name.toLowerCase());
-        if (!isDeleted && !merged.some((m) => m.name.toLowerCase() === initMember.name.toLowerCase())) {
-          merged.push(initMember);
-        }
-      });
-      // Saring juga dbMembers yang mungkin masuk daftar deleted
-      membersList = merged.filter((m) => !deletedDefaults.includes((m.name || "").toLowerCase()));
-    } else {
-      membersList = INTERN_MEMBERS.filter((m) => !deletedDefaults.includes(m.name.toLowerCase()));
-    }
+    membersList = dbMembers;
 
     renderMembersNav();
     renderMemberSelection();
+
     if (visitedMember) {
-      const refreshed = membersList.find((m) => m.name.toLowerCase() === visitedMember.name.toLowerCase());
+      const refreshed = membersList.find((m) => m.id === visitedMember.id || m.name.toLowerCase() === visitedMember.name.toLowerCase());
       if (refreshed) {
         visitingAvatar.src = refreshed.avatar || "assets/images/ID_CARD.jpg";
         visitingName.textContent = refreshed.name;
         visitingRole.textContent = refreshed.role || "Anak Magang";
         visitingBio.textContent = `"${refreshed.bio || "Mendokumentasikan perjalanan magang 🚀"}"`;
         updateVisitingStats(refreshed);
+      } else {
+        visitMemberProfile(null);
       }
     }
+
     const currentName = getUserName();
     if (currentName) setUserName(currentName);
   }, (err) => {
