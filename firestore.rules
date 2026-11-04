@@ -4,5 +4,11 @@ service cloud.firestore {
     match /internship_photos/{document=**} {
       allow read, write: if true;
     }
+    match /members/{document=**} {
+      allow read, write: if true;
+    }
+    match /stories/{document=**} {
+      allow read, write: if true;
+    }
   }
 }

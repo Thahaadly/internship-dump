@@ -41,12 +41,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const uploaderPreviewName = document.getElementById("uploaderPreviewName");
 
   const membersNavRow = document.getElementById("membersNavRow");
+  const openAddMemberBtn = document.getElementById("openAddMemberBtn");
+  const editMyProfileBtn = document.getElementById("editMyProfileBtn");
+  const modalAddNewMemberBtn = document.getElementById("modalAddNewMemberBtn");
   const visitingBanner = document.getElementById("visitingBanner");
   const visitingAvatar = document.getElementById("visitingAvatar");
   const visitingName = document.getElementById("visitingName");
   const visitingRole = document.getElementById("visitingRole");
   const visitingBio = document.getElementById("visitingBio");
+  const editVisitingMemberBtn = document.getElementById("editVisitingMemberBtn");
   const clearVisitingBtn = document.getElementById("clearVisitingBtn");
+
+  const memberModal = document.getElementById("memberModal");
+  const closeMemberModalBtn = document.getElementById("closeMemberModalBtn");
+  const memberModalHeading = document.getElementById("memberModalHeading");
+  const memberForm = document.getElementById("memberForm");
+  const memberDocId = document.getElementById("memberDocId");
+  const memberNameInput = document.getElementById("memberNameInput");
+  const memberRoleInput = document.getElementById("memberRoleInput");
+  const memberBioInput = document.getElementById("memberBioInput");
+  const memberAvatarInput = document.getElementById("memberAvatarInput");
+  const memberAvatarFileInput = document.getElementById("memberAvatarFileInput");
+  const memberAvatarPreview = document.getElementById("memberAvatarPreview");
+  const submitMemberBtn = document.getElementById("submitMemberBtn");
+  const deleteMemberBtn = document.getElementById("deleteMemberBtn");
 
   const photoModal = document.getElementById("photoModal");
   const modalContent = document.getElementById("modalContent");
@@ -98,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const photoCaptionInput = document.getElementById("photoCaptionInput");
 
   const tilts = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-2", "rotate-0"];
+  let membersList = [...INTERN_MEMBERS];
   let allPhotos = [];
   let currentFilter = "all";
   let currentSort = "newest";
@@ -137,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getUserAvatar(name) {
-    const member = INTERN_MEMBERS.find((m) => m.name.toLowerCase() === (name || "").toLowerCase() || m.username.toLowerCase() === (name || "").toLowerCase());
+    const member = membersList.find((m) => m.name.toLowerCase() === (name || "").toLowerCase() || (m.username && m.username.toLowerCase() === (name || "").toLowerCase()));
     return member ? member.avatar : "assets/images/ID_CARD.jpg";
   }
 
@@ -325,14 +344,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderMemberSelection() {
     if (!memberSelectGrid) return;
     memberSelectGrid.innerHTML = "";
-    INTERN_MEMBERS.forEach((m) => {
+    membersList.forEach((m) => {
       const card = document.createElement("button");
       card.type = "button";
       card.className = "flex flex-col items-center p-3 rounded-2xl border-2 border-stone-200 hover:border-[#00529C] hover:bg-blue-50/50 transition group";
       card.innerHTML = `
-        <img src="${m.avatar}" alt="${m.name}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-white shadow group-hover:scale-105 transition-transform">
+        <img src="${m.avatar || "assets/images/ID_CARD.jpg"}" alt="${m.name}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-white shadow group-hover:scale-105 transition-transform">
         <span class="font-bold text-sm text-stone-900 group-hover:text-[#00529C]">${m.name}</span>
-        <span class="text-[10px] text-stone-500 text-center leading-tight mt-0.5 line-clamp-1">${m.role}</span>
+        <span class="text-[10px] text-stone-500 text-center leading-tight mt-0.5 line-clamp-1">${m.role || "Anak Magang"}</span>
       `;
       card.addEventListener("click", () => {
         setUserName(m.name);
@@ -347,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!membersNavRow) return;
     membersNavRow.innerHTML = "";
 
-    // Tombol "Semua Momen" di nav profil
+    // Tombol "Semua Tim" di nav profil
     const allBtn = document.createElement("button");
     allBtn.className = `flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm ${
       !visitedMember ? "bg-amber-400 text-stone-900 ring-2 ring-white" : "bg-white/20 text-white hover:bg-white/30"
@@ -356,14 +375,14 @@ document.addEventListener("DOMContentLoaded", () => {
     allBtn.addEventListener("click", () => visitMemberProfile(null));
     membersNavRow.appendChild(allBtn);
 
-    INTERN_MEMBERS.forEach((m) => {
-      const isSelected = visitedMember && visitedMember.username === m.username;
+    membersList.forEach((m) => {
+      const isSelected = visitedMember && (visitedMember.id ? visitedMember.id === m.id : visitedMember.name === m.name);
       const btn = document.createElement("button");
       btn.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm ${
         isSelected ? "bg-amber-400 text-stone-900 ring-2 ring-white scale-105" : "bg-white/20 text-white hover:bg-white/30"
       }`;
       btn.innerHTML = `
-        <img src="${m.avatar}" alt="${m.name}" class="w-5 h-5 rounded-full object-cover">
+        <img src="${m.avatar || "assets/images/ID_CARD.jpg"}" alt="${m.name}" class="w-5 h-5 rounded-full object-cover">
         <span>${m.name}</span>
       `;
       btn.addEventListener("click", () => visitMemberProfile(m));
@@ -377,10 +396,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (member) {
       visitingBanner.classList.remove("hidden");
-      visitingAvatar.src = member.avatar;
+      visitingAvatar.src = member.avatar || "assets/images/ID_CARD.jpg";
       visitingName.textContent = `Album ${member.name} 📸`;
-      visitingRole.textContent = member.role;
-      visitingBio.textContent = `"${member.bio}"`;
+      visitingRole.textContent = member.role || "Anak Magang";
+      visitingBio.textContent = `"${member.bio || "Mendokumentasikan perjalanan magang 🚀"}"`;
       showToast(`Melihat momen dari ${member.name}`, "info");
     } else {
       visitingBanner.classList.add("hidden");
@@ -392,6 +411,219 @@ document.addEventListener("DOMContentLoaded", () => {
   if (clearVisitingBtn) {
     clearVisitingBtn.addEventListener("click", () => visitMemberProfile(null));
   }
+
+  // === CRUD MEMBER MODAL LOGIC ===
+  function openMemberFormModal(member = null) {
+    if (member) {
+      memberModalHeading.textContent = `Edit Profil ${member.name} ✏️`;
+      memberDocId.value = member.id || "";
+      memberNameInput.value = member.name || "";
+      memberRoleInput.value = member.role || "";
+      memberBioInput.value = member.bio || "";
+      memberAvatarInput.value = member.avatar || "";
+      memberAvatarPreview.src = member.avatar || "assets/images/ID_CARD.jpg";
+      submitMemberBtn.textContent = "Simpan Perubahan 💾";
+      if (member.id) {
+        deleteMemberBtn.classList.remove("hidden");
+      } else {
+        deleteMemberBtn.classList.add("hidden");
+      }
+    } else {
+      memberModalHeading.textContent = "Tambah Anggota Magang Baru 👤";
+      memberDocId.value = "";
+      memberForm.reset();
+      memberAvatarPreview.src = "assets/images/ID_CARD.jpg";
+      submitMemberBtn.textContent = "Tambah Anggota 🚀";
+      deleteMemberBtn.classList.add("hidden");
+    }
+    memberModal.classList.remove("hidden");
+  }
+
+  function closeMemberFormModal() {
+    memberModal.classList.add("hidden");
+    memberForm.reset();
+  }
+
+  closeMemberModalBtn?.addEventListener("click", closeMemberFormModal);
+  openAddMemberBtn?.addEventListener("click", () => openMemberFormModal(null));
+  modalAddNewMemberBtn?.addEventListener("click", () => {
+    nameModal.classList.add("hidden");
+    openMemberFormModal(null);
+  });
+
+  editMyProfileBtn?.addEventListener("click", () => {
+    const currentName = getUserName();
+    const currentMember = membersList.find((m) => m.name.toLowerCase() === currentName.toLowerCase()) || {
+      name: currentName,
+      role: "Anak Magang",
+      bio: "",
+      avatar: getUserAvatar(currentName)
+    };
+    openMemberFormModal(currentMember);
+  });
+
+  editVisitingMemberBtn?.addEventListener("click", () => {
+    if (visitedMember) openMemberFormModal(visitedMember);
+  });
+
+  // Avatar URL live preview
+  memberAvatarInput?.addEventListener("input", (e) => {
+    memberAvatarPreview.src = e.target.value.trim() || "assets/images/ID_CARD.jpg";
+  });
+
+  // Upload file avatar ke Vercel Blob
+  memberAvatarFileInput?.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      showToast("Mengompresi & mengupload foto profil...", "info");
+      const compressed = await compressImage(file, 600, 0.8);
+      const url = await uploadPhoto(compressed);
+      memberAvatarInput.value = url;
+      memberAvatarPreview.src = url;
+      showToast("Foto profil siap digunakan!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal upload foto profil.", "error");
+    }
+  });
+
+  // Submit Simpan Member ke Firestore
+  memberForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = memberNameInput.value.trim();
+    const role = memberRoleInput.value.trim();
+    const bio = memberBioInput.value.trim();
+    const avatar = memberAvatarInput.value.trim() || "assets/images/ID_CARD.jpg";
+    const docId = memberDocId.value;
+
+    if (!name) {
+      showToast("Nama tidak boleh kosong.", "error");
+      return;
+    }
+
+    try {
+      submitMemberBtn.disabled = true;
+      submitMemberBtn.textContent = "Menyimpan...";
+
+      if (docId) {
+        // Update document yang ada
+        const memberRef = doc(db, "members", docId);
+        await updateDoc(memberRef, {
+          name,
+          role,
+          bio,
+          avatar,
+          updatedAt: serverTimestamp()
+        });
+        showToast(`Profil ${name} berhasil diperbarui!`, "success");
+      } else {
+        // Cek jika member dari file awal mau di-save ke Firestore
+        const existingInit = membersList.find((m) => m.name.toLowerCase() === name.toLowerCase());
+        if (existingInit && existingInit.id) {
+          await updateDoc(doc(db, "members", existingInit.id), {
+            name,
+            role,
+            bio,
+            avatar,
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          // Tambah member baru
+          await addDoc(collection(db, "members"), {
+            name,
+            username: name.toLowerCase().replace(/\s+/g, "_"),
+            role,
+            bio,
+            avatar,
+            createdAt: serverTimestamp()
+          });
+        }
+        showToast(`Anggota ${name} berhasil ditambahkan! 🎉`, "success");
+      }
+
+      // Jika user yang sedang aktif mengedit profilnya sendiri, perbarui status lokal
+      if (getUserName().toLowerCase() === name.toLowerCase()) {
+        setUserName(name);
+      }
+
+      closeMemberFormModal();
+    } catch (err) {
+      console.error("Gagal simpan member:", err);
+      showToast("Gagal menyimpan data anggota.", "error");
+    } finally {
+      submitMemberBtn.disabled = false;
+      submitMemberBtn.textContent = "Simpan Anggota 💾";
+    }
+  });
+
+  // Hapus Member dari Firestore
+  deleteMemberBtn?.addEventListener("click", async () => {
+    const docId = memberDocId.value;
+    const name = memberNameInput.value;
+    if (!docId) return;
+    if (!confirm(`Yakin ingin menghapus anggota "${name}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, "members", docId));
+      showToast(`Anggota ${name} telah dihapus.`, "info");
+      if (visitedMember && visitedMember.id === docId) {
+        visitMemberProfile(null);
+      }
+      closeMemberFormModal();
+    } catch (err) {
+      console.error("Gagal hapus member:", err);
+      showToast("Gagal menghapus anggota.", "error");
+    }
+  });
+
+  // Sync Realtime Member dari Firestore
+  const membersQuery = query(collection(db, "members"));
+  onSnapshot(membersQuery, (snapshot) => {
+    const dbMembers = [];
+    snapshot.forEach((d) => {
+      dbMembers.push({ id: d.id, ...d.data() });
+    });
+
+    if (dbMembers.length > 0) {
+      // Gabungkan member bawaan dengan yang di Firestore (Firestore lebih prioritas)
+      const merged = [...dbMembers];
+      INTERN_MEMBERS.forEach((initMember) => {
+        if (!merged.some((m) => m.name.toLowerCase() === initMember.name.toLowerCase())) {
+          merged.push(initMember);
+        }
+      });
+      membersList = merged;
+    } else {
+      // Jika Firestore masih kosong, auto-seed INTERN_MEMBERS ke Firestore agar langsung bisa diedit
+      INTERN_MEMBERS.forEach(async (initMember) => {
+        try {
+          await addDoc(collection(db, "members"), {
+            ...initMember,
+            createdAt: serverTimestamp()
+          });
+        } catch (e) {
+          console.error("Seed member error:", e);
+        }
+      });
+      membersList = [...INTERN_MEMBERS];
+    }
+
+    renderMembersNav();
+    if (visitedMember) {
+      const refreshed = membersList.find((m) => m.name.toLowerCase() === visitedMember.name.toLowerCase());
+      if (refreshed) {
+        visitingAvatar.src = refreshed.avatar || "assets/images/ID_CARD.jpg";
+        visitingName.textContent = `Album ${refreshed.name} 📸`;
+        visitingRole.textContent = refreshed.role;
+        visitingBio.textContent = `"${refreshed.bio}"`;
+      }
+    }
+    const currentName = getUserName();
+    if (currentName) setUserName(currentName);
+  }, (err) => {
+    console.error("Member sync error:", err);
+  });
 
   const savedName = getUserName();
   if (!savedName) {

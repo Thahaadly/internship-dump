@@ -4,22 +4,25 @@ export const INTERN_MEMBERS = [
   {
     username: "herry",
     name: "Herry",
-    role: "Fullstack / IT Dev",
+    role: "Departement OSE",
     avatar: "assets/images/HERRY.jpeg",
-    bio: "Kopi dulu baru coding, bug belakangan ☕💻"
+    bio: "Suka nonton anime dan main game"
   },
   {
     username: "david",
     name: "David",
-    role: "Network & Infrastructure",
+    role: "Departement IT ",
     avatar: "assets/images/DAVID.jpeg",
-    bio: "Pecinta kabel LAN rapi dan wifi kencang 🌐⚡"
+    bio: "HI"
   },
   {
     username: "edo",
     name: "Edo",
-    role: "System & Database",
+    role: "Departement IT",
     avatar: "assets/images/EDO.jpeg",
-    bio: "Santai tapi sprint selalu beres 🚀😎"
+    bio: "aku jago banget IT bang"
   }
+
+
+  
 ];

@@ -19,7 +19,8 @@
     <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-medium mb-4 shadow-sm">
       <img id="currentUserAvatar" src="assets/images/HERRY.jpeg" alt="Avatar" class="w-5 h-5 rounded-full object-cover border border-white/40">
       <span>👋 Halo, <strong id="currentUserNameDisplay" class="font-bold underline decoration-amber-300">Teman Magang</strong></span>
-      <button id="changeNameBtn" class="text-[10px] bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-white transition ml-1">Ganti Profil</button>
+      <button id="editMyProfileBtn" class="text-[10px] bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-white transition ml-1">✏️ Edit Profil</button>
+      <button id="changeNameBtn" class="text-[10px] bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-white transition">Ganti Akun</button>
     </div>
 
     <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-sm">
@@ -31,7 +32,12 @@
 
     <!-- Navigasi Member / Kunjungi Profil Teman -->
     <div class="mb-6">
-      <p class="text-xs text-blue-200 uppercase tracking-wider font-semibold mb-2">Jelajahi Profil Tim Magang 👇</p>
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <p class="text-xs text-blue-200 uppercase tracking-wider font-semibold">Jelajahi Profil Tim Magang 👇</p>
+        <button id="openAddMemberBtn" class="text-[11px] bg-amber-400 text-stone-900 font-bold px-2.5 py-0.5 rounded-full hover:bg-amber-300 transition shadow flex items-center gap-1">
+          <span>+</span> Tambah Anggota
+        </button>
+      </div>
       <div id="membersNavRow" class="flex flex-wrap items-center justify-center gap-3">
         <!-- Render dinamis via JS -->
       </div>
@@ -42,7 +48,10 @@
       <div class="flex items-center justify-center gap-3 mb-2">
         <img id="visitingAvatar" src="" class="w-12 h-12 rounded-full object-cover border-2 border-amber-300 shadow">
         <div class="text-left">
-          <h2 id="visitingName" class="text-lg font-bold leading-tight">Nama Anggota</h2>
+          <div class="flex items-center gap-2">
+            <h2 id="visitingName" class="text-lg font-bold leading-tight">Nama Anggota</h2>
+            <button id="editVisitingMemberBtn" class="text-[11px] bg-white/25 hover:bg-white/40 px-2 py-0.5 rounded-full text-white transition">✏️ Edit</button>
+          </div>
           <p id="visitingRole" class="text-xs text-amber-200 font-medium">Divisi</p>
         </div>
       </div>
@@ -109,6 +118,12 @@
       <!-- List Pilihan Anggota -->
       <div id="memberSelectGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         <!-- Render dinamis kartu profil -->
+      </div>
+
+      <div class="mb-4">
+        <button id="modalAddNewMemberBtn" type="button" class="w-full py-2 px-3 border border-dashed border-[#00529C] text-[#00529C] hover:bg-blue-50 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+          <span>+</span> Tambah Anggota / Akun Baru
+        </button>
       </div>
 
       <!-- Opsi manual jika ingin nama tamu/eksternal -->
@@ -307,6 +322,99 @@
   </div>
 
   <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] flex flex-col gap-2 items-center pointer-events-none w-[min(92vw,24rem)]"></div>
+
+  <!-- Modal Form Tambah / Edit Anggota Magang -->
+  <div id="memberModal" class="fixed inset-0 z-50 bg-stone-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-stone-800 shadow-2xl relative">
+      <button id="closeMemberModalBtn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 transition" type="button">
+        ✕
+      </button>
+
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-xl">
+          👤
+        </div>
+        <div>
+          <h2 id="memberModalHeading" class="text-xl font-bold text-stone-900 leading-tight">Profil Anggota</h2>
+          <p class="text-stone-500 text-xs">Atur identitas akun magangmu</p>
+        </div>
+      </div>
+
+      <form id="memberForm" class="space-y-3.5">
+        <input type="hidden" id="memberDocId" value="">
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Nama Panggilan *</label>
+          <input 
+            type="text" 
+            id="memberNameInput" 
+            required 
+            placeholder="misal: Herry" 
+            class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Divisi / Departemen *</label>
+          <input 
+            type="text" 
+            id="memberRoleInput" 
+            required 
+            placeholder="misal: Departement IT" 
+            class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Bio / Slogan Singkat</label>
+          <input 
+            type="text" 
+            id="memberBioInput" 
+            placeholder="misal: Kopi dulu baru coding ☕" 
+            class="w-full px-3.5 py-2 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Foto Profil (URL Gambar atau Upload)</label>
+          <div class="flex gap-2 mb-2">
+            <input 
+              type="text" 
+              id="memberAvatarInput" 
+              placeholder="https://... atau pilih file di samping" 
+              class="w-full px-3.5 py-2 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00529C]"
+            />
+            <label class="shrink-0 px-3 py-2 bg-stone-100 hover:bg-stone-200 rounded-lg text-xs font-semibold cursor-pointer text-stone-700 flex items-center">
+              📁 Upload
+              <input type="file" id="memberAvatarFileInput" accept="image/*" class="hidden">
+            </label>
+          </div>
+          <div id="memberAvatarPreviewWrap" class="flex items-center gap-3 bg-stone-50 p-2 rounded-xl border border-stone-200">
+            <img id="memberAvatarPreview" src="assets/images/ID_CARD.jpg" class="w-10 h-10 rounded-full object-cover border border-stone-300">
+            <span class="text-xs text-stone-500">Preview foto profil</span>
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center gap-2">
+          <button 
+            type="submit" 
+            id="submitMemberBtn" 
+            class="flex-1 py-2.5 px-4 rounded-xl font-bold text-white bg-[#00529C] hover:bg-[#003d75] transition shadow-md active:scale-98 text-sm"
+          >
+            Simpan Anggota 💾
+          </button>
+          <button 
+            type="button" 
+            id="deleteMemberBtn" 
+            class="hidden py-2.5 px-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition text-sm" 
+            title="Hapus Anggota Ini"
+          >
+            🗑️
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Story Viewer Overlay -->
   <div id="storyViewer" class="fixed inset-0 z-[90] bg-stone-950/95 hidden">
